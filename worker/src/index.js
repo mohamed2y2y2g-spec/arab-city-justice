@@ -60,6 +60,7 @@ export default {
     }
 
     if(url.pathname==="/auth/callback" && request.method==="GET") {
+      try {
       const state=url.searchParams.get("state"), saved=cookie(request,"acj_oauth_state"), code=url.searchParams.get("code");
       const clearState=clearCookie("acj_oauth_state");
       if(!state || !saved || state!==saved || !code) return redirect("/?login=invalid",{"Set-Cookie":clearState});
@@ -78,6 +79,10 @@ export default {
       if(!roles.includes(env.MINISTRY_ROLE_ID)) return redirect("/?login=no-access",{"Set-Cookie":clearState});
       const session=await seal({id:user.id,username:user.username,global_name:user.global_name||user.username,avatar:user.avatar||null,roles,exp:Date.now()+6*60*60*1000},env.SESSION_SECRET);
       return redirect("/members.html",{"Set-Cookie":[setCookie("acj_session",session,21600),clearState]});
+      } catch (error) {
+        console.error("OAuth callback exception:", error?.stack || error);
+        return json({error:"OAuth callback failed. Check Worker logs."},500,{"Set-Cookie":clearCookie("acj_oauth_state")});
+      }
     }
 
     if(url.pathname==="/auth/logout" && request.method==="POST") {
