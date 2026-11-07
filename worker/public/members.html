@@ -30,9 +30,9 @@
  </header>
  <div class="page-wrap">
   <section class="page-view active" id="page-overview">
-   <div class="page-heading"><div><div class="eyebrow">CONTROL CENTER / 01</div><h1>الرئيسية</h1><p>نظرة عامة على أعمال وزارة العدل.</p></div><span class="secure-label">● اتصال موثّق</span></div>
-   <div class="welcome-panel"><div><div class="eyebrow">ARAB CITY RP · MINISTRY OF JUSTICE</div><h2>مرحباً بعودتك، <span id="welcome-name">...</span></h2><p>من هنا تقدر تتابع أقسام الوزارة وتدير المهام المتاحة حسب صلاحيات رتبتك.</p></div><div class="welcome-seal">ع</div></div>
-   <div class="stats-grid"><article class="stat-card"><span>التعاميم المنشورة</span><strong id="stat-circulars">—</strong><small>إجمالي التعاميم المسجلة</small></article><article class="stat-card"><span>أقسام النظام</span><strong>08</strong><small>الأقسام الرئيسية للوزارة</small></article><article class="stat-card"><span>حالة الحساب</span><strong class="stat-ok">نشط</strong><small>تم التحقق من عضويتك</small></article></div>
+   <div class="page-heading"><div><div class="eyebrow">MINISTRY PORTAL / 01</div><h1>الرئيسية</h1><p>بوابة وزارة العدل — Arab City RP</p></div><span class="secure-label">● اتصال موثّق</span></div>
+   <div class="welcome-panel"><div><div class="eyebrow">ARAB CITY RP · MINISTRY OF JUSTICE</div><h2>مرحباً بعودتك، <span id="welcome-name">...</span></h2><p>تصفح الخدمات والمعلومات العامة، وسجّل دخولك للوصول إلى المساحات المخصصة لأعضاء الوزارة.</p></div><div class="welcome-seal">ع</div></div>
+   <div class="stats-grid"><article class="stat-card"><span>التعاميم المنشورة</span><strong id="stat-circulars">—</strong><small>إجمالي التعاميم المسجلة</small></article><article class="stat-card"><span>أقسام النظام</span><strong>08</strong><small>الأقسام الرئيسية للوزارة</small></article><article class="stat-card"><span>الوصول</span><strong class="stat-ok">مفتوح</strong><small>الموقع متاح للجميع</small></article></div>
    <div class="content-grid"><section class="panel"><div class="panel-head"><div><span class="eyebrow">LATEST UPDATES</span><h3>أحدث التعاميم</h3></div><button class="text-action" data-go="circulars">عرض الكل ←</button></div><div id="overview-circulars" class="empty-state">جارٍ تحميل البيانات...</div></section><section class="panel quick-panel"><div class="panel-head"><div><span class="eyebrow">QUICK ACCESS</span><h3>الوصول السريع</h3></div></div><button data-go="circulars" class="quick-link"><span>▤</span><span>التعاميم<small>عرض القرارات المنشورة</small></span><b>←</b></button><button data-go="lawyers" class="quick-link"><span>⚖</span><span>المحامون<small>إدارة بيانات المحامين</small></span><b>←</b></button><button data-go="requests" class="quick-link"><span>⇥</span><span>الطلبات<small>متابعة الطلبات الواردة</small></span><b>←</b></button></section></div>
   </section>
   <section class="page-view" id="page-circulars">
@@ -76,7 +76,7 @@ async function init(){
  } else {
   el("welcome-name").textContent="زائر";
  }
- const privatePages=["members","cases","requests","meetings","messages"];
+ const privatePages=["members","lawyers","cases","requests","meetings","messages"];
  if(!isMinistry){
   document.querySelectorAll(".side-link[data-page]").forEach(b=>{if(privatePages.includes(b.dataset.page))b.hidden=true;});
   privatePages.forEach(name=>{const section=el("page-"+name);if(section)section.hidden=true;});
