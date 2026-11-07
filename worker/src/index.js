@@ -60,28 +60,58 @@ export default {
     }
 
     if(url.pathname==="/auth/callback" && request.method==="GET") {
-      try {
-      const state=url.searchParams.get("state"), saved=cookie(request,"acj_oauth_state"), code=url.searchParams.get("code");
+      let oauthStage="callback-entry";
       const clearState=clearCookie("acj_oauth_state");
-      if(!state || !saved || state!==saved || !code) return redirect("/?login=invalid",{"Set-Cookie":clearState});
-      if(!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET || !env.DISCORD_REDIRECT_URI || !env.SESSION_SECRET) return json({error:"OAuth secrets are not configured."},503,{"Set-Cookie":clearState});
-      const form=new URLSearchParams({client_id:env.DISCORD_CLIENT_ID,client_secret:env.DISCORD_CLIENT_SECRET,grant_type:"authorization_code",code,redirect_uri:env.DISCORD_REDIRECT_URI});
-      const tokenRes=await fetch("https://discord.com/api/v10/oauth2/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:form});
-      if(!tokenRes.ok) return redirect("/?login=failed",{"Set-Cookie":clearState});
-      const token=await tokenRes.json();
-      const userRes=await discordFetch("/users/@me",token.access_token);
-      if(!userRes.ok) return redirect("/?login=failed",{"Set-Cookie":clearState});
-      const user=await userRes.json();
-      const memberRes=await discordFetch("/users/@me/guilds/"+env.DISCORD_GUILD_ID+"/member",token.access_token);
-      if(!memberRes.ok) return redirect("/?login=not-member",{"Set-Cookie":clearState});
-      const member=await memberRes.json();
-      const roles=Array.isArray(member.roles)?member.roles:[];
-      if(!roles.includes(env.MINISTRY_ROLE_ID)) return redirect("/?login=no-access",{"Set-Cookie":clearState});
-      const session=await seal({id:user.id,username:user.username,global_name:user.global_name||user.username,avatar:user.avatar||null,roles,exp:Date.now()+6*60*60*1000},env.SESSION_SECRET);
-      return redirect("/members.html",{"Set-Cookie":[setCookie("acj_session",session,21600),clearState]});
+      try {
+        oauthStage="validate-state";
+        const state=url.searchParams.get("state"), saved=cookie(request,"acj_oauth_state"), code=url.searchParams.get("code");
+        if(!state || !saved || state!==saved || !code) return redirect("/?login=invalid",{"Set-Cookie":clearState});
+        oauthStage="validate-config";
+        if(!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET || !env.DISCORD_REDIRECT_URI || !env.DISCORD_GUILD_ID || !env.MINISTRY_ROLE_ID || !env.SESSION_SECRET) {
+          console.error("OAuth configuration missing", {
+            clientId:!!env.DISCORD_CLIENT_ID, clientSecret:!!env.DISCORD_CLIENT_SECRET,
+            redirectUri:!!env.DISCORD_REDIRECT_URI, guildId:!!env.DISCORD_GUILD_ID,
+            ministryRoleId:!!env.MINISTRY_ROLE_ID, sessionSecret:!!env.SESSION_SECRET
+          });
+          return json({error:"OAuth configuration is incomplete."},503,{"Set-Cookie":clearState});
+        }
+        oauthStage="exchange-code";
+        const form=new URLSearchParams({client_id:env.DISCORD_CLIENT_ID,client_secret:env.DISCORD_CLIENT_SECRET,grant_type:"authorization_code",code,redirect_uri:env.DISCORD_REDIRECT_URI});
+        const tokenRes=await fetch("https://discord.com/api/v10/oauth2/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:form});
+        if(!tokenRes.ok) {
+          const detail=(await tokenRes.text()).slice(0,500);
+          console.error("OAuth token exchange rejected",tokenRes.status,detail);
+          return json({error:"Discord token exchange failed.",stage:oauthStage,status:tokenRes.status},502,{"Set-Cookie":clearState});
+        }
+        oauthStage="parse-token";
+        const token=await tokenRes.json();
+        if(!token?.access_token) throw new Error("Discord token response did not include access_token");
+        oauthStage="fetch-user";
+        const userRes=await discordFetch("/users/@me",token.access_token);
+        if(!userRes.ok) {
+          console.error("Discord user lookup rejected",userRes.status,(await userRes.text()).slice(0,300));
+          return json({error:"Discord user lookup failed.",stage:oauthStage,status:userRes.status},502,{"Set-Cookie":clearState});
+        }
+        const user=await userRes.json();
+        if(!user?.id || !user?.username) throw new Error("Discord user response is missing required fields");
+        oauthStage="fetch-guild-member";
+        const memberRes=await discordFetch("/users/@me/guilds/"+env.DISCORD_GUILD_ID+"/member",token.access_token);
+        if(!memberRes.ok) {
+          console.error("Discord guild member lookup rejected",memberRes.status,(await memberRes.text()).slice(0,300));
+          return json({error:"Discord guild membership lookup failed.",stage:oauthStage,status:memberRes.status},502,{"Set-Cookie":clearState});
+        }
+        const member=await memberRes.json();
+        const roles=Array.isArray(member.roles)?member.roles:[];
+        oauthStage="check-ministry-role";
+        if(!roles.includes(env.MINISTRY_ROLE_ID)) return redirect("/?login=no-access",{"Set-Cookie":clearState});
+        oauthStage="create-session";
+        const session=await seal({id:user.id,username:user.username,global_name:user.global_name||user.username,avatar:user.avatar||null,roles,exp:Date.now()+6*60*60*1000},env.SESSION_SECRET);
+        oauthStage="finish-login";
+        return redirect("/members.html",{"Set-Cookie":[setCookie("acj_session",session,21600),clearState]});
       } catch (error) {
-        console.error("OAuth callback exception:", error?.stack || error);
-        return json({error:"OAuth callback failed. Check Worker logs."},500,{"Set-Cookie":clearCookie("acj_oauth_state")});
+        const message=String(error?.message||error||"Unknown error").slice(0,500);
+        console.error("OAuth callback exception",JSON.stringify({stage:oauthStage,name:error?.name||"Error",message,stack:error?.stack||""}));
+        return json({error:"OAuth callback failed.",stage:oauthStage,detail:message},500,{"Set-Cookie":clearState});
       }
     }
 
