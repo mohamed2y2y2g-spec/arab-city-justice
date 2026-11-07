@@ -64,7 +64,7 @@ async function loadCirculars(){
  render("overview-circulars",true);render("circular-list",false);
 }
 async function init(){
- const me=await fetch("/api/me");if(!me.ok){location.href="/auth/login";return;}
+ const me=await fetch("/api/me");if(!me.ok){location.href="/?login=session-invalid";return;}
  const data=await me.json();const name=data.user.displayName||data.user.username;
  el("profile-name").textContent=name;el("welcome-name").textContent=name;el("avatar").textContent=name.slice(0,1);
  if(data.user.avatar)el("avatar").style.backgroundImage="url(https://cdn.discordapp.com/avatars/"+data.user.id+"/"+data.user.avatar+".png?size=64)";
