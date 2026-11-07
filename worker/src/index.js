@@ -219,6 +219,18 @@ export default {
       return json({ok:true},201);
     }
 
+    if(url.pathname==="/" && request.method==="GET") {
+      const reason=url.searchParams.get("login")||"";
+      const messages={
+        invalid:"تعذر التحقق من جلسة Discord (state). غالباً المتصفح لم يحفظ ملف الارتباط أو انتهت صلاحيته.",
+        "no-access":"تم تسجيل دخول Discord، لكن حسابك لا يحمل رتبة عضو وزارة العدل المطلوبة.",
+        "session-invalid":"رجعنا من Discord لكن ملف الجلسة لم يصل أو لم يتم التحقق منه.",
+        failed:"Discord رفض إكمال تسجيل الدخول. حاول مرة أخرى."
+      };
+      const message=messages[reason]||"بوابة تسجيل الدخول لوزارة العدل — Arab City RP.";
+      const html='<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>وزارة العدل</title><body style="margin:0;background:#0a111a;color:#f2f0e9;font-family:Tahoma,Arial;min-height:100vh;display:grid;place-items:center"><main style="max-width:560px;margin:24px;padding:32px;background:#111c29;border:1px solid #344456"><div style="color:#c7a66b;font-size:12px;letter-spacing:2px">ARAB CITY RP · MINISTRY OF JUSTICE</div><h1 style="font-size:27px">بوابة وزارة العدل</h1><p style="color:#b9c3cf;line-height:2">'+message+'</p><a href="/auth/login" style="display:inline-block;margin-top:14px;padding:12px 22px;background:#b28f55;color:#101722;text-decoration:none">إعادة محاولة تسجيل الدخول</a></main></body></html>';
+      return new Response(html,{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
+    }
     if(url.pathname.startsWith("/api/")) return json({error:"Not found"},404);
     if(url.pathname === "/") return redirect("/auth/login");
     return new Response("Not found", {status:404, headers:{"content-type":"text/plain; charset=utf-8"}});
