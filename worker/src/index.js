@@ -110,6 +110,80 @@ export default {
       return json({ok:true,id:result.meta.last_row_id},201);
     }
 
+
+    const privateSession = await getSession(request,env);
+    const isMinistry = privateSession && privateSession.roles.includes(env.MINISTRY_ROLE_ID);
+    const isJudge = privateSession && (privateSession.roles.includes(env.JUDGE_ROLE_ID) || privateSession.roles.includes(env.DEPUTY_JUDGE_ROLE_ID));
+    if (url.pathname.startsWith("/api/") && !["/api/health","/api/me","/api/circulars"].includes(url.pathname) && !isMinistry) return json({error:"Ministry access required"},privateSession?403:401);
+
+    if(url.pathname==="/api/cases" && request.method==="GET"){
+      const {results}=await env.DB.prepare("SELECT * FROM cases ORDER BY created_at DESC LIMIT 100").all();
+      return json({items:results||[]});
+    }
+    if(url.pathname==="/api/cases" && request.method==="POST"){
+      if(!isJudge) return json({error:"Judge permission required"},403);
+      let b;try{b=await request.json()}catch{return json({error:"Invalid JSON"},400)}
+      const title=String(b.title||"").trim(),summary=String(b.summary||"").trim(),number=String(b.case_number||"").trim();
+      if(!title||!summary||!number||title.length>180||summary.length>5000||number.length>50)return json({error:"راجع بيانات القضية"},400);
+      const r=await env.DB.prepare("INSERT INTO cases(case_number,title,summary,created_by) VALUES(?,?,?,?)").bind(number,title,summary,privateSession.id).run();
+      await env.DB.prepare("INSERT INTO audit_log(actor_discord_id,action,target_type,target_id) VALUES(?,?,?,?)").bind(privateSession.id,"create_case","case",String(r.meta.last_row_id)).run();
+      return json({ok:true,id:r.meta.last_row_id},201);
+    }
+    if(url.pathname==="/api/meetings" && request.method==="GET"){
+      const {results}=await env.DB.prepare("SELECT * FROM meetings ORDER BY meeting_at DESC LIMIT 100").all();return json({items:results||[]});
+    }
+    if(url.pathname==="/api/meetings" && request.method==="POST"){
+      if(!isJudge)return json({error:"Judge permission required"},403);
+      let b;try{b=await request.json()}catch{return json({error:"Invalid JSON"},400)}
+      const title=String(b.title||"").trim(),details=String(b.details||"").trim(),at=String(b.meeting_at||"").trim(),location=String(b.location||"مقر الوزارة").trim();
+      if(!title||!at||title.length>180||details.length>5000||location.length>160)return json({error:"راجع بيانات الاجتماع"},400);
+      const r=await env.DB.prepare("INSERT INTO meetings(title,details,meeting_at,location,created_by) VALUES(?,?,?,?,?)").bind(title,details,at,location,privateSession.id).run();
+      return json({ok:true,id:r.meta.last_row_id},201);
+    }
+    if(url.pathname==="/api/messages" && request.method==="GET"){
+      const {results}=await env.DB.prepare("SELECT id,author_discord_id,author_name,body,created_at FROM messages ORDER BY id DESC LIMIT 100").all();return json({items:(results||[]).reverse()});
+    }
+    if(url.pathname==="/api/messages" && request.method==="POST"){
+      let b;try{b=await request.json()}catch{return json({error:"Invalid JSON"},400)}
+      const body=String(b.body||"").trim();if(!body||body.length>2000)return json({error:"الرسالة فارغة أو طويلة"},400);
+      const name=String(privateSession.global_name||privateSession.username||"عضو").slice(0,80);
+      const r=await env.DB.prepare("INSERT INTO messages(author_discord_id,author_name,body) VALUES(?,?,?)").bind(privateSession.id,name,body).run();
+      return json({ok:true,id:r.meta.last_row_id},201);
+    }
+    if(url.pathname==="/api/requests" && request.method==="GET"){
+      if(!isJudge)return json({error:"Judge permission required"},403);
+      const {results}=await env.DB.prepare("SELECT * FROM requests ORDER BY created_at DESC LIMIT 100").all();return json({items:results||[]});
+    }
+    if(url.pathname==="/api/requests" && request.method==="POST"){
+      let b;try{b=await request.json()}catch{return json({error:"Invalid JSON"},400)}
+      const category=String(b.category||"عام").trim(),subject=String(b.subject||"").trim(),body=String(b.body||"").trim();
+      if(!subject||!body||subject.length>160||body.length>3000)return json({error:"راجع بيانات الطلب"},400);
+      const r=await env.DB.prepare("INSERT INTO requests(requester_discord_id,category,subject,body) VALUES(?,?,?,?)").bind(privateSession.id,category,subject,body).run();
+      return json({ok:true,id:r.meta.last_row_id},201);
+    }
+    if(url.pathname==="/api/tasks" && request.method==="GET"){
+      const {results}=await env.DB.prepare("SELECT * FROM ministry_tasks ORDER BY created_at DESC LIMIT 100").all();return json({items:results||[]});
+    }
+    if(url.pathname==="/api/tasks" && request.method==="POST"){
+      if(!isJudge)return json({error:"Judge permission required"},403);
+      let b;try{b=await request.json()}catch{return json({error:"Invalid JSON"},400)}
+      const title=String(b.title||"").trim(),details=String(b.details||"").trim(),assigned=String(b.assigned_to||"").trim()||null,due=String(b.due_at||"").trim()||null;
+      if(!title||title.length>180||details.length>3000)return json({error:"راجع بيانات المهمة"},400);
+      const r=await env.DB.prepare("INSERT INTO ministry_tasks(title,details,assigned_to,created_by,due_at) VALUES(?,?,?,?,?)").bind(title,details,assigned,privateSession.id,due).run();
+      return json({ok:true,id:r.meta.last_row_id},201);
+    }
+    if(url.pathname==="/api/lawyers" && request.method==="GET"){
+      const {results}=await env.DB.prepare("SELECT discord_id,display_name,rank,points,status,notes,updated_at FROM lawyers ORDER BY points DESC,display_name ASC").all();return json({items:results||[]});
+    }
+    if(url.pathname==="/api/lawyers" && request.method==="POST"){
+      if(!isJudge)return json({error:"Judge permission required"},403);
+      let b;try{b=await request.json()}catch{return json({error:"Invalid JSON"},400)}
+      const id=String(b.discord_id||"").trim(),name=String(b.display_name||"").trim(),rank=String(b.rank||"محامٍ").trim(),points=Number(b.points||0),notes=String(b.notes||"").trim();
+      if(!id||!name||name.length>100||!Number.isInteger(points)||points<0||points>10000)return json({error:"راجع بيانات المحامي"},400);
+      await env.DB.prepare("INSERT INTO lawyers(discord_id,display_name,rank,points,notes) VALUES(?,?,?,?,?) ON CONFLICT(discord_id) DO UPDATE SET display_name=excluded.display_name,rank=excluded.rank,points=excluded.points,notes=excluded.notes,updated_at=CURRENT_TIMESTAMP").bind(id,name,rank,points,notes).run();
+      return json({ok:true},201);
+    }
+
     if(url.pathname.startsWith("/api/")) return json({error:"Not found"},404);
     return env.ASSETS.fetch(request);
   }
