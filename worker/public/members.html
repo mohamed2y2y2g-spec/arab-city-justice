@@ -1,29 +1,78 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101722"><title>بوابة الأعضاء | وزارة العدل</title><link rel="stylesheet" href="/style.css"></head>
-<body>
-<header class="topbar"><a class="brand" href="/"><span class="mark">ع</span><span>وزارة العدل<small>MEMBERS PORTAL</small></span></a><nav><a href="/">الصفحة العامة</a><button id="logout" class="login" type="button">تسجيل الخروج</button></nav></header>
-<main>
-<section class="hero"><p class="eyebrow">ARAB CITY RP · RESTRICTED AREA</p><h1>بوابة الأعضاء</h1><p class="lead" id="welcome">جارٍ التحقق من الجلسة...</p><span class="state" id="access-state">التحقق من الصلاحية</span></section>
-<section class="section"><p class="eyebrow">01 / INTERNAL</p><h2>الخدمات الداخلية</h2><div class="cards"><article><span>01</span><h3>التعاميم</h3><p>متابعة القرارات المنشورة من الجهات المخولة.</p></article><article><span>02</span><h3>الطلبات</h3><p>قسم الطلبات قيد التجهيز.</p></article><article><span>03</span><h3>الملفات والقضايا</h3><p>سيُتاح بعد استكمال الصلاحيات وسجل الوصول.</p></article></div></section>
-<section class="section"><p class="eyebrow">02 / CIRCULARS</p><h2>آخر التعاميم</h2><div id="circular-list" class="notice">جارٍ تحميل التعاميم...</div><div id="publish-area" hidden><h3>نشر تعميم</h3><form id="publish-form"><input id="title" maxlength="160" placeholder="عنوان التعميم" required><textarea id="body" maxlength="10000" rows="5" placeholder="نص التعميم" required></textarea><button class="login" type="submit">نشر</button></form><p id="publish-message" class="cards"></p></div></section>
-</main><footer>ARAB CITY RP <span>·</span> MINISTRY OF JUSTICE</footer>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101722">
+<title>لوحة تحكم وزارة العدل | Arab City RP</title><link rel="stylesheet" href="/style.css">
+</head>
+<body class="dashboard-body">
+<div class="dashboard-shell">
+<aside class="sidebar" id="sidebar">
+ <a class="side-brand" href="/"><span class="mark">ع</span><span>وزارة العدل<small>ARAB CITY RP</small></span></a>
+ <div class="side-label">القائمة الرئيسية</div>
+ <button class="side-link active" data-page="overview"><span>⌂</span> الرئيسية</button>
+ <button class="side-link" data-page="circulars"><span>▤</span> التعاميم</button>
+ <button class="side-link" data-page="members"><span>♙</span> أعضاء الوزارة</button>
+ <button class="side-link" data-page="lawyers"><span>⚖</span> المحامون</button>
+ <div class="side-label">الإدارة القضائية</div>
+ <button class="side-link" data-page="cases"><span>▣</span> القضايا</button>
+ <button class="side-link" data-page="requests"><span>⇥</span> الطلبات</button>
+ <button class="side-link" data-page="meetings"><span>▦</span> الاجتماعات</button>
+ <button class="side-link" data-page="messages"><span>▧</span> المحادثات</button>
+ <div class="side-spacer"></div>
+ <a class="side-link side-public" href="/"><span>↗</span> الموقع العام</a>
+ <button class="side-link logout-link" id="logout"><span>⇥</span> تسجيل الخروج</button>
+ <div class="side-foot">MINISTRY OF JUSTICE <b>·</b> INTERNAL PORTAL</div>
+</aside>
+<main class="dashboard-main">
+ <header class="dash-topbar">
+  <div class="dash-top-right"><button class="mobile-menu" id="menu-toggle" aria-label="فتح القائمة">☰</button><div><div class="crumb">وزارة العدل <span>/</span> <b id="crumb-title">الرئيسية</b></div><div class="dash-date">لوحة الإدارة الداخلية</div></div></div>
+  <div class="profile"><div class="avatar" id="avatar">ع</div><div><strong id="profile-name">جارٍ التحميل...</strong><small>عضو في الوزارة</small></div></div>
+ </header>
+ <div class="page-wrap">
+  <section class="page-view active" id="page-overview">
+   <div class="page-heading"><div><div class="eyebrow">CONTROL CENTER / 01</div><h1>الرئيسية</h1><p>نظرة عامة على أعمال وزارة العدل.</p></div><span class="secure-label">● اتصال موثّق</span></div>
+   <div class="welcome-panel"><div><div class="eyebrow">ARAB CITY RP · MINISTRY OF JUSTICE</div><h2>مرحباً بعودتك، <span id="welcome-name">...</span></h2><p>من هنا تقدر تتابع أقسام الوزارة وتدير المهام المتاحة حسب صلاحيات رتبتك.</p></div><div class="welcome-seal">ع</div></div>
+   <div class="stats-grid"><article class="stat-card"><span>التعاميم المنشورة</span><strong id="stat-circulars">—</strong><small>إجمالي التعاميم المسجلة</small></article><article class="stat-card"><span>أقسام النظام</span><strong>08</strong><small>الأقسام الرئيسية للوزارة</small></article><article class="stat-card"><span>حالة الحساب</span><strong class="stat-ok">نشط</strong><small>تم التحقق من عضويتك</small></article></div>
+   <div class="content-grid"><section class="panel"><div class="panel-head"><div><span class="eyebrow">LATEST UPDATES</span><h3>أحدث التعاميم</h3></div><button class="text-action" data-go="circulars">عرض الكل ←</button></div><div id="overview-circulars" class="empty-state">جارٍ تحميل البيانات...</div></section><section class="panel quick-panel"><div class="panel-head"><div><span class="eyebrow">QUICK ACCESS</span><h3>الوصول السريع</h3></div></div><button data-go="circulars" class="quick-link"><span>▤</span><span>التعاميم<small>عرض القرارات المنشورة</small></span><b>←</b></button><button data-go="lawyers" class="quick-link"><span>⚖</span><span>المحامون<small>إدارة بيانات المحامين</small></span><b>←</b></button><button data-go="requests" class="quick-link"><span>⇥</span><span>الطلبات<small>متابعة الطلبات الواردة</small></span><b>←</b></button></section></div>
+  </section>
+  <section class="page-view" id="page-circulars">
+   <div class="page-heading"><div><div class="eyebrow">PUBLICATIONS / 02</div><h1>التعاميم</h1><p>سجل القرارات والتوجيهات الرسمية الصادرة عن الوزارة.</p></div></div>
+   <section class="panel"><div class="panel-head"><div><span class="eyebrow">CIRCULAR REGISTER</span><h3>سجل التعاميم</h3></div><span class="count-pill" id="circular-count">0 تعميم</span></div><div id="circular-list" class="empty-state">جارٍ تحميل التعاميم...</div></section>
+   <section class="panel publish-panel" id="publish-area" hidden><div class="panel-head"><div><span class="eyebrow">AUTHORIZED ACTION</span><h3>إصدار تعميم جديد</h3></div><span class="secure-label">صلاحية النشر متاحة</span></div><form id="publish-form" class="publish-form"><label>عنوان التعميم<input id="title" maxlength="160" placeholder="اكتب عنواناً واضحاً للتعميم" required></label><label>نص التعميم<textarea id="body" maxlength="10000" rows="6" placeholder="اكتب نص القرار أو التوجيه..." required></textarea></label><div class="form-bottom"><span id="publish-message" aria-live="polite"></span><button class="gold-button" type="submit">نشر التعميم</button></div></form></section>
+  </section>
+  <section class="page-view" id="page-members"><div class="page-heading"><div><div class="eyebrow">DIRECTORY / 03</div><h1>أعضاء الوزارة</h1><p>دليل أعضاء وزارة العدل والصلاحيات الإدارية.</p></div></div><div class="panel coming-panel"><div class="coming-icon">♙</div><h3>دليل أعضاء الوزارة</h3><p>القسم جاهز ضمن لوحة التحكم، وسيتم ربطه ببيانات أعضاء Discord وعرض الرتب والصلاحيات في المرحلة التالية.</p><span class="state">قيد الربط</span></div></section>
+  <section class="page-view" id="page-lawyers"><div class="page-heading"><div><div class="eyebrow">LEGAL DIRECTORY / 04</div><h1>المحامون</h1><p>إدارة سجل المحامين والرتب والنقاط.</p></div></div><div class="panel coming-panel"><div class="coming-icon">⚖</div><h3>سجل المحامين</h3><p>سيظهر هنا المحامون المعتمدون ورتبهم ونقاطهم وفق نظام المحاماة المعتمد.</p><span class="state">قيد الربط</span></div></section>
+  <section class="page-view" id="page-cases"><div class="page-heading"><div><div class="eyebrow">CASE MANAGEMENT / 05</div><h1>القضايا</h1><p>متابعة ملفات القضايا والإجراءات المرتبطة بها.</p></div></div><div class="panel coming-panel"><div class="coming-icon">▣</div><h3>إدارة القضايا</h3><p>سيتم تخصيص هذا القسم لفتح ملفات القضايا وتحديث حالتها وتوثيق الإجراءات.</p><span class="state">قيد التطوير</span></div></section>
+  <section class="page-view" id="page-requests"><div class="page-heading"><div><div class="eyebrow">INCOMING / 06</div><h1>الطلبات</h1><p>مراجعة الطلبات الواردة إلى الوزارة.</p></div></div><div class="panel coming-panel"><div class="coming-icon">⇥</div><h3>مركز الطلبات</h3><p>سيتم عرض طلبات الانضمام والمراجعة والطلبات الإدارية في هذا القسم.</p><span class="state">قيد التطوير</span></div></section>
+  <section class="page-view" id="page-meetings"><div class="page-heading"><div><div class="eyebrow">SCHEDULE / 07</div><h1>الاجتماعات</h1><p>مواعيد الاجتماعات ومحاضر الجلسات الداخلية.</p></div></div><div class="panel coming-panel"><div class="coming-icon">▦</div><h3>سجل الاجتماعات</h3><p>سيتم إضافة جدول الاجتماعات ومحاضرها والملفات المرتبطة بها.</p><span class="state">قيد التطوير</span></div></section>
+  <section class="page-view" id="page-messages"><div class="page-heading"><div><div class="eyebrow">COMMUNICATION / 08</div><h1>المحادثات</h1><p>مساحة التواصل الداخلي لأعضاء الوزارة.</p></div></div><div class="panel coming-panel"><div class="coming-icon">▧</div><h3>المحادثات الداخلية</h3><p>سيتم ربط القسم بنظام محادثات خاص بأعضاء الوزارة مع حفظ سجل الرسائل والصلاحيات.</p><span class="state">قيد التطوير</span></div></section>
+  <footer class="dash-footer">ARAB CITY RP <span>·</span> MINISTRY OF JUSTICE <span class="footer-copy">جميع الحقوق محفوظة للوزارة</span></footer>
+ </div>
+</main>
+</div>
 <script>
 const el=id=>document.getElementById(id);
-async function init(){
- const me=await fetch('/api/me');
- if(!me.ok){location.href='/auth/login';return;}
- const data=await me.json();
- el('welcome').textContent='مرحباً، '+(data.user.displayName||data.user.username);
- el('access-state').textContent='تم التحقق من عضوية الوزارة';
- if(data.roles.includes('1399521070939377674') || data.roles.includes('1399519841576292472')) el('publish-area').hidden=false;
- const res=await fetch('/api/circulars'); const payload=await res.json();
- const list=el('circular-list');
- if(!payload.items?.length){list.textContent=payload.error||'لا توجد تعاميم منشورة حالياً.';return;}
- list.replaceChildren(...payload.items.map(item=>{const card=document.createElement('article');card.className='notice';const h=document.createElement('h3');h.textContent=item.title;const p=document.createElement('p');p.textContent=item.body;const small=document.createElement('small');small.textContent=new Date(item.published_at+'Z').toLocaleString('ar-EG');card.append(h,p,small);return card;}));
+const titles={overview:"الرئيسية",circulars:"التعاميم",members:"أعضاء الوزارة",lawyers:"المحامون",cases:"القضايا",requests:"الطلبات",meetings:"الاجتماعات",messages:"المحادثات"};
+function showPage(name){document.querySelectorAll(".page-view").forEach(x=>x.classList.toggle("active",x.id==="page-"+name));document.querySelectorAll(".side-link[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===name));el("crumb-title").textContent=titles[name]||"الرئيسية";document.body.classList.remove("sidebar-open");window.scrollTo({top:0,behavior:"smooth"});}
+document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
+document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
+el("menu-toggle").addEventListener("click",()=>document.body.classList.toggle("sidebar-open"));
+async function loadCirculars(){
+ const res=await fetch("/api/circulars");const payload=await res.json();const items=payload.items||[];
+ el("stat-circulars").textContent=items.length;el("circular-count").textContent=items.length+" تعميم";
+ const render=(target,compact)=>{const box=el(target);if(!items.length){box.textContent=payload.error||"لا توجد تعاميم منشورة حتى الآن.";box.className="empty-state";return;}box.className=compact?"compact-list":"circular-stack";box.replaceChildren(...items.map(item=>{const card=document.createElement("article");card.className="circular-item";const head=document.createElement("div");head.className="circular-item-head";const h=document.createElement("h4");h.textContent=item.title;const date=document.createElement("small");date.textContent=new Date(item.published_at+"Z").toLocaleDateString("ar-EG");head.append(h,date);const p=document.createElement("p");p.textContent=item.body;card.append(head,p);return card;}));};
+ render("overview-circulars",true);render("circular-list",false);
 }
-el('logout').addEventListener('click',async()=>{await fetch('/auth/logout',{method:'POST'});location.href='/';});
-el('publish-form').addEventListener('submit',async e=>{e.preventDefault();const r=await fetch('/api/circulars',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:el('title').value,body:el('body').value})});const d=await r.json();el('publish-message').textContent=d.ok?'تم نشر التعميم.':(d.error||'تعذر النشر');if(d.ok){el('publish-form').reset();init();}});
+async function init(){
+ const me=await fetch("/api/me");if(!me.ok){location.href="/auth/login";return;}
+ const data=await me.json();const name=data.user.displayName||data.user.username;
+ el("profile-name").textContent=name;el("welcome-name").textContent=name;el("avatar").textContent=name.slice(0,1);
+ if(data.user.avatar)el("avatar").style.backgroundImage="url(https://cdn.discordapp.com/avatars/"+data.user.id+"/"+data.user.avatar+".png?size=64)";
+ if(data.roles.includes("1399521070939377674")||data.roles.includes("1399519841576292472"))el("publish-area").hidden=false;
+ await loadCirculars();
+}
+el("logout").addEventListener("click",async()=>{await fetch("/auth/logout",{method:"POST"});location.href="/";});
+el("publish-form").addEventListener("submit",async e=>{e.preventDefault();const btn=e.submitter;btn.disabled=true;el("publish-message").textContent="جارٍ النشر...";const r=await fetch("/api/circulars",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:el("title").value,body:el("body").value})});const d=await r.json();el("publish-message").textContent=d.ok?"تم نشر التعميم بنجاح.":(d.error||"تعذر النشر.");btn.disabled=false;if(d.ok){el("publish-form").reset();await loadCirculars();}});
 init();
 </script>
 </body></html>
