@@ -220,6 +220,7 @@ export default {
     }
 
     if(url.pathname.startsWith("/api/")) return json({error:"Not found"},404);
-    return env.ASSETS.fetch(request);
+    if(url.pathname === "/") return redirect("/auth/login");
+    return new Response("Not found", {status:404, headers:{"content-type":"text/plain; charset=utf-8"}});
   }
 };
