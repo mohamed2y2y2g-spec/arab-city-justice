@@ -26,7 +26,7 @@
 <main class="dashboard-main">
  <header class="dash-topbar">
   <div class="dash-top-right"><button class="mobile-menu" id="menu-toggle" aria-label="فتح القائمة">☰</button><div><div class="crumb">وزارة العدل <span>/</span> <b id="crumb-title">الرئيسية</b></div><div class="dash-date">لوحة الإدارة الداخلية</div></div></div>
-  <div class="profile"><div class="avatar" id="avatar">ع</div><div><strong id="profile-name">جارٍ التحميل...</strong><small>عضو في الوزارة</small></div></div>
+  <div class="profile"><div class="avatar" id="avatar">ز</div><div><strong id="profile-name">زائر</strong><small id="profile-status">تصفح عام</small></div><a class="text-action" id="login-link" href="/auth/login">تسجيل Discord</a></div>
  </header>
  <div class="page-wrap">
   <section class="page-view active" id="page-overview">
@@ -64,14 +64,28 @@ async function loadCirculars(){
  render("overview-circulars",true);render("circular-list",false);
 }
 async function init(){
- const me=await fetch("/api/me");if(!me.ok){location.href="/?login=session-invalid";return;}
- const data=await me.json();const name=data.user.displayName||data.user.username;
- el("profile-name").textContent=name;el("welcome-name").textContent=name;el("avatar").textContent=name.slice(0,1);
- if(data.user.avatar)el("avatar").style.backgroundImage="url(https://cdn.discordapp.com/avatars/"+data.user.id+"/"+data.user.avatar+".png?size=64)";
- if(data.roles.includes("1399521070939377674")||data.roles.includes("1399519841576292472"))el("publish-area").hidden=false;
+ const me=await fetch("/api/me");
+ let isMinistry=false;
+ if(me.ok){
+  const data=await me.json();const name=data.user.displayName||data.user.username;
+  isMinistry=data.roles.includes("1398530419661475850");
+  el("profile-name").textContent=name;el("welcome-name").textContent=name;el("avatar").textContent=name.slice(0,1);
+  el("profile-status").textContent=isMinistry?"عضو وزارة العدل":"حساب Discord";
+  el("login-link").textContent="تسجيل الخروج";el("login-link").href="/auth/logout";
+  if(data.user.avatar)el("avatar").style.backgroundImage="url(https://cdn.discordapp.com/avatars/"+data.user.id+"/"+data.user.avatar+".png?size=64)";
+ } else {
+  el("welcome-name").textContent="زائر";
+ }
+ const privatePages=["members","cases","requests","meetings","messages"];
+ if(!isMinistry){
+  document.querySelectorAll(".side-link[data-page]").forEach(b=>{if(privatePages.includes(b.dataset.page))b.hidden=true;});
+  privatePages.forEach(name=>{const section=el("page-"+name);if(section)section.hidden=true;});
+ }
+ if(isMinistry && (await fetch("/api/me").then(r=>r.json())).roles.some(role=>role==="1399521070939377674"||role==="1399519841576292472"))el("publish-area").hidden=false;
  await loadCirculars();
 }
 el("logout").addEventListener("click",async()=>{await fetch("/auth/logout",{method:"POST"});location.href="/";});
+el("login-link").addEventListener("click",async e=>{if(e.currentTarget.textContent==="تسجيل الخروج"){e.preventDefault();await fetch("/auth/logout",{method:"POST"});location.href="/";}});
 el("publish-form").addEventListener("submit",async e=>{e.preventDefault();const btn=e.submitter;btn.disabled=true;el("publish-message").textContent="جارٍ النشر...";const r=await fetch("/api/circulars",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:el("title").value,body:el("body").value})});const d=await r.json();el("publish-message").textContent=d.ok?"تم نشر التعميم بنجاح.":(d.error||"تعذر النشر.");btn.disabled=false;if(d.ok){el("publish-form").reset();await loadCirculars();}});
 init();
 </script>
