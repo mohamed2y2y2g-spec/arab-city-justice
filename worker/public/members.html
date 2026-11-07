@@ -16,7 +16,7 @@ async function init(){
  const data=await me.json();
  el('welcome').textContent='مرحباً، '+(data.user.displayName||data.user.username);
  el('access-state').textContent='تم التحقق من عضوية الوزارة';
- if(data.roles.includes('1399521070939377674')) el('publish-area').hidden=false;
+ if(data.roles.includes('1399521070939377674') || data.roles.includes('1399519841576292472')) el('publish-area').hidden=false;
  const res=await fetch('/api/circulars'); const payload=await res.json();
  const list=el('circular-list');
  if(!payload.items?.length){list.textContent=payload.error||'لا توجد تعاميم منشورة حالياً.';return;}
