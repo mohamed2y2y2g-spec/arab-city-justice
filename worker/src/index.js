@@ -96,14 +96,19 @@ export default {
         if(!user?.id || !user?.username) throw new Error("Discord user response is missing required fields");
         oauthStage="fetch-guild-member";
         const memberRes=await discordFetch("/users/@me/guilds/"+env.DISCORD_GUILD_ID+"/member",token.access_token);
-        if(!memberRes.ok) {
+        let roles=[];
+        if(memberRes.ok) {
+          const member=await memberRes.json();
+          roles=Array.isArray(member.roles)?member.roles:[];
+        } else if(memberRes.status===404) {
+          // Discord account is valid but is not a member of this server.
+          // Public portal access is still allowed; internal APIs remain role-protected.
+          roles=[];
+        } else {
           console.error("Discord guild member lookup rejected",memberRes.status,(await memberRes.text()).slice(0,300));
           return json({error:"Discord guild membership lookup failed.",stage:oauthStage,status:memberRes.status},502,{"Set-Cookie":clearState});
         }
-        const member=await memberRes.json();
-        const roles=Array.isArray(member.roles)?member.roles:[];
         oauthStage="check-ministry-role";
-        if(!roles.includes(env.MINISTRY_ROLE_ID)) return redirect("/?login=no-access",{"Set-Cookie":clearState});
         oauthStage="create-session";
         const session=await seal({id:user.id,username:user.username,global_name:user.global_name||user.username,avatar:user.avatar||null,roles,exp:Date.now()+6*60*60*1000},env.SESSION_SECRET);
         oauthStage="finish-login";
