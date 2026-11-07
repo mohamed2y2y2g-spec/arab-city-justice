@@ -40,7 +40,7 @@ async function getSession(request, env) {
 async function discordFetch(path, token) {
   return fetch("https://discord.com/api/v10"+path, {headers:{Authorization:"Bearer "+token}});
 }
-function redirect(url, headers={}) { return new Response(null,{status:302,headers:{Location:url,...headers}}); }
+function redirect(url, headers={}) { const h=new Headers({Location:url}); for (const [k,v] of Object.entries(headers)) { if (Array.isArray(v)) for (const item of v) h.append(k,item); else h.set(k,v); } return new Response(null,{status:302,headers:h}); }
 
 export default {
   async fetch(request, env) {
@@ -77,7 +77,7 @@ export default {
       const roles=Array.isArray(member.roles)?member.roles:[];
       if(!roles.includes(env.MINISTRY_ROLE_ID)) return redirect("/?login=no-access",{"Set-Cookie":clearState});
       const session=await seal({id:user.id,username:user.username,global_name:user.global_name||user.username,avatar:user.avatar||null,roles,exp:Date.now()+6*60*60*1000},env.SESSION_SECRET);
-      return redirect("/members.html",{"Set-Cookie":[setCookie("acj_session",session,21600),clearState].join(", ")});
+      return redirect("/members.html",{"Set-Cookie":[setCookie("acj_session",session,21600),clearState]});
     }
 
     if(url.pathname==="/auth/logout" && request.method==="POST") {
@@ -101,7 +101,7 @@ export default {
       if(!sameOrigin(request)) return json({error:"Origin rejected"},403);
       const session=await getSession(request,env);
       if(!session) return json({error:"Sign in required"},401);
-      if(!session.roles.includes(env.JUDGE_ROLE_ID)) return json({error:"Insufficient permissions"},403);
+      if(!session.roles.includes(env.JUDGE_ROLE_ID) && !session.roles.includes(env.DEPUTY_JUDGE_ROLE_ID)) return json({error:"Insufficient permissions"},403);
       let body; try { body=await request.json(); } catch { return json({error:"Invalid JSON"},400); }
       const title=String(body.title||"").trim(), text=String(body.body||"").trim();
       if(!title || !text || title.length>160 || text.length>10000) return json({error:"Title/body is missing or too long"},400);
