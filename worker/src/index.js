@@ -82,7 +82,7 @@ export default {
 
     if(url.pathname==="/auth/logout" && request.method==="POST") {
       if(!sameOrigin(request)) return json({error:"Origin rejected"},403);
-      return json({ok:true},{status:200,headers:{"Set-Cookie":clearCookie("acj_session")}});
+      return json({ok:true},200,{"Set-Cookie":clearCookie("acj_session")});
     }
 
     if(url.pathname==="/api/me" && request.method==="GET") {
