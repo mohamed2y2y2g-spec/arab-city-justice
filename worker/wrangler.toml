@@ -1,0 +1,17 @@
+name = "arab-city-justice"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "arab-city-justice"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+DISCORD_GUILD_ID = "1208103623872221204"
+MINISTRY_ROLE_ID = "1398530419661475850"
+JUDGE_ROLE_ID = "1399521070939377674"
