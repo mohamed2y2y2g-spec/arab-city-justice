@@ -9,7 +9,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "arab-city-justice"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "2e78100f-a8b4-4808-a7f3-aeaf09921ee3"
 
 [vars]
 DISCORD_GUILD_ID = "1208103623872221204"
