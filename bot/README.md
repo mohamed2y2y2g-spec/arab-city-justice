@@ -35,10 +35,16 @@ https://discord.com/developers/applications/1568710970522472558/bot
 - `WORKER_INGEST_URL`: رابط استقبال الرسائل الموجود في المثال.
 - `BOT_INGEST_SECRET`: قيمة سرية عشوائية تختارها بنفسك؛ لازم تتسجل بنفس القيمة كـ Worker Secret في Cloudflare قبل تشغيل الربط.
 
-صفحة Cloudflare:
-https://dash.cloudflare.com/c07e23ca3750c802b24592640bd854c8
+صفحة أسرار Worker في Cloudflare:
+https://dash.cloudflare.com/c07e23ca3750c802b24592640bd854c8/workers/services/view/arab-city-justice/production/settings
 
-## 4) تشغيل البوت
+من Environment Variables أضف Secret باسم `BOT_INGEST_SECRET` بنفس القيمة التي وضعتها في ملف `.env`.
+
+## 4) اختبار لوحة الوزارة
+افتح لوحة التجربة وسجّل الدخول بحساب موجود في سيرفر الاختبار:
+https://arab-city-justice.mohamed2y2y2g.workers.dev/members.html
+
+## 5) تشغيل البوت
 من داخل مجلد `bot`:
 ```powershell
 npm install
