@@ -50,7 +50,7 @@ export default {
     const requestSession=await getSession(request,env);
     const requestIsTest=requestSession?.server==="test";
     const db=requestIsTest?env.TEST_DB:env.DB;
-    if(url.pathname==="/api/health") return json({ok:true,service:"Arab City RP — Ministry Of Justice",stage:"authentication-setup-required"});
+    if(url.pathname==="/api/health") return json({ok:true,service:"Arab City RP — Ministry Of Justice",stage:"dashboard-deployed",testDatabase:!!env.TEST_DB,botIngestConfigured:!!env.BOT_INGEST_SECRET});
 
     if(url.pathname==="/api/bot/messages" && request.method==="POST"){
       const expected=env.BOT_INGEST_SECRET;
