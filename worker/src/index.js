@@ -48,8 +48,8 @@ export default {
   async fetch(request, env) {
     const url=new URL(request.url);
     const requestSession=await getSession(request,env);
-    const testServer=requestSession?.server==="test";
-    const db=testServer?env.TEST_DB:env.DB;
+    const requestIsTest=requestSession?.server==="test";
+    const db=requestIsTest?env.TEST_DB:env.DB;
     if(url.pathname==="/api/health") return json({ok:true,service:"Arab City RP — Ministry Of Justice",stage:"authentication-setup-required"});
 
     if(url.pathname==="/api/bot/messages" && request.method==="POST"){
