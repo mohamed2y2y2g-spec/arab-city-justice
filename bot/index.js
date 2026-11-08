@@ -10,6 +10,8 @@ for (const key of required) {
 }
 
 const TEST_GUILD_ID = "1569044247208923291";
+const MINISTRY_MEMBER_ROLE_ID = "1569053569544618024";
+const MINISTRY_SOURCE_ROLE_IDS = new Set(["1569053629401534474", "1569053685441499196"]);
 const ALLOWED_CHANNELS = new Set([
   "1569054230138978415",
   "1569054925122699417"
@@ -19,6 +21,7 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.MessageContent
   ]
 });
@@ -26,6 +29,24 @@ const client = new Client({
 client.once(Events.ClientReady, ready => {
   console.log(`Connected as ${ready.user.tag}; isolated test guild only.`);
 });
+
+async function syncMinistryMemberRole(member) {
+  if (!member || member.guild?.id !== TEST_GUILD_ID || member.user?.bot) return;
+  const isMinistryStaff = [...MINISTRY_SOURCE_ROLE_IDS].some(roleId => member.roles.cache.has(roleId));
+  const alreadyHasMemberRole = member.roles.cache.has(MINISTRY_MEMBER_ROLE_ID);
+  try {
+    if (isMinistryStaff && !alreadyHasMemberRole) {
+      await member.roles.add(MINISTRY_MEMBER_ROLE_ID, "Ministry staff role sync (test server only)");
+    } else if (!isMinistryStaff && alreadyHasMemberRole) {
+      await member.roles.remove(MINISTRY_MEMBER_ROLE_ID, "Ministry staff role sync (test server only)");
+    }
+  } catch (error) {
+    console.error("Ministry role sync failed:", error.message);
+  }
+}
+
+client.on(Events.GuildMemberAdd, syncMinistryMemberRole);
+client.on(Events.GuildMemberUpdate, async (_oldMember, newMember) => syncMinistryMemberRole(newMember));
 
 client.on(Events.MessageCreate, async message => {
   if (!message.guild || message.guild.id !== TEST_GUILD_ID) return;
