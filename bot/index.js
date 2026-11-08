@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Client, GatewayIntentBits, Events } from "discord.js";
 
 const required = ["DISCORD_BOT_TOKEN", "WORKER_INGEST_URL", "BOT_INGEST_SECRET"];
