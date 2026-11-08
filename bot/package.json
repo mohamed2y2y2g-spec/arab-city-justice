@@ -1,0 +1,10 @@
+{
+  "name": "arab-city-justice-test-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Discord bridge for the isolated Arab City RP test guild",
+  "main": "index.js",
+  "scripts": { "start": "node index.js" },
+  "engines": { "node": ">=20" },
+  "dependencies": { "discord.js": "^14.22.1" }
+}
