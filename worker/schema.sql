@@ -59,7 +59,8 @@ CREATE TABLE IF NOT EXISTS meetings (
 );
 CREATE TABLE IF NOT EXISTS messages (
  id INTEGER PRIMARY KEY AUTOINCREMENT, author_discord_id TEXT NOT NULL,
- author_name TEXT NOT NULL, body TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+ author_name TEXT NOT NULL, body TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ discord_message_id TEXT UNIQUE, source_channel_id TEXT
 );
 CREATE TABLE IF NOT EXISTS lawyers (
  discord_id TEXT PRIMARY KEY, display_name TEXT NOT NULL, rank TEXT NOT NULL DEFAULT 'محامٍ',
