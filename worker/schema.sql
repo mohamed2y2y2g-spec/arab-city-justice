@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS members (
   username TEXT NOT NULL,
   display_name TEXT,
   avatar_hash TEXT,
+  guild_id TEXT,
   source_role_ids TEXT NOT NULL DEFAULT '[]',
   active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
