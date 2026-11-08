@@ -231,6 +231,8 @@ export default {
       const {results}=await db.prepare("SELECT * FROM requests ORDER BY created_at DESC LIMIT 100").all();return json({items:results||[]});
     }
     if(url.pathname==="/api/requests" && request.method==="POST"){
+      if(!privateSession)return json({error:"Sign in required"},401);
+      if(!sameOrigin(request))return json({error:"Origin rejected"},403);
       let b;try{b=await request.json()}catch{return json({error:"Invalid JSON"},400)}
       const category=String(b.category||"عام").trim(),subject=String(b.subject||"").trim(),body=String(b.body||"").trim();
       if(!subject||!body||subject.length>160||body.length>3000)return json({error:"راجع بيانات الطلب"},400);
