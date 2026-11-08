@@ -168,8 +168,9 @@ export default {
       if(!sameOrigin(request)) return json({error:"Origin rejected"},403);
       const session=await getSession(request,env);
       if(!session) return json({error:"Sign in required"},401);
-      const judgeRoles=session.server==="test"?["1569053629401534474","1569053685441499196"]:[env.JUDGE_ROLE_ID,env.DEPUTY_JUDGE_ROLE_ID];
-      if(!session.roles.some(role=>judgeRoles.includes(role))) return json({error:"Insufficient permissions"},403);
+      const testRoles=["1569053629401534474","1569053685441499196"];
+      const allowedRoles=session.server==="test"?testRoles:[env.JUDGE_ROLE_ID,env.DEPUTY_JUDGE_ROLE_ID];
+      if(!session.roles.some(role=>role && allowedRoles.includes(role))) return json({error:"صلاحية إصدار التعاميم مخصصة لوزير العدل ونائبه والإدارة القضائية."},403);
       let body; try { body=await request.json(); } catch { return json({error:"Invalid JSON"},400); }
       const title=String(body.title||"").trim(), text=String(body.body||"").trim();
       if(!title || !text || title.length>160 || text.length>10000) return json({error:"Title/body is missing or too long"},400);
@@ -216,10 +217,15 @@ export default {
       return json({ok:true,id:r.meta.last_row_id},201);
     }
     if(url.pathname==="/api/messages" && request.method==="GET"){
-      const {results}=await db.prepare("SELECT id,author_discord_id,author_name,body,created_at,source_channel_id FROM messages ORDER BY id DESC LIMIT 100").all();return json({items:(results||[]).reverse()});
+      if(!privateSession) return json({error:"سجل دخولك أولاً."},401);
+      if(!isMinistry) return json({error:"المحادثات مخصصة لأعضاء الوزارة فقط."},403);
+      const {results}=await db.prepare("SELECT id,author_discord_id,author_name,body,created_at,source_channel_id FROM messages ORDER BY id DESC LIMIT 100").all();
+      return json({items:(results||[]).reverse()});
     }
     if(url.pathname==="/api/messages" && request.method==="POST"){
       if(!sameOrigin(request))return json({error:"Origin rejected"},403);
+      if(!privateSession) return json({error:"سجل دخولك أولاً."},401);
+      if(!isMinistry) return json({error:"إرسال الرسائل مخصص لأعضاء الوزارة فقط."},403);
       let b;try{b=await request.json()}catch{return json({error:"Invalid JSON"},400)}
       const body=String(b.body||"").trim();if(!body||body.length>2000)return json({error:"الرسالة فارغة أو طويلة"},400);
       const name=String(privateSession.global_name||privateSession.username||"عضو").slice(0,80);
