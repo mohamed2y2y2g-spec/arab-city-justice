@@ -49,6 +49,22 @@ export default {
     const url=new URL(request.url);
     if(url.pathname==="/api/health") return json({ok:true,service:"Arab City RP — Ministry Of Justice",stage:"authentication-setup-required"});
 
+    if(url.pathname==="/api/bot/messages" && request.method==="POST"){
+      const expected=env.BOT_INGEST_SECRET;
+      const supplied=request.headers.get("x-bot-ingest-secret")||"";
+      if(!expected || supplied.length!==expected.length) return json({error:"Unauthorized"},401);
+      let match=0;for(let i=0;i<expected.length;i++)match|=expected.charCodeAt(i)^supplied.charCodeAt(i);
+      if(match!==0) return json({error:"Unauthorized"},401);
+      let b;try{b=await request.json()}catch{return json({error:"Invalid JSON"},400)}
+      const allowedChannels=["1569054230138978415","1569054925122699417"];
+      if(b.guild_id!=="1569044247208923291" || !allowedChannels.includes(String(b.channel_id))) return json({error:"Guild or channel not allowed"},403);
+      const author=String(b.author_id||"").slice(0,32),name=String(b.author_name||"عضو").slice(0,80),body=String(b.body||"").trim();
+      if(!author||!body||body.length>2000) return json({error:"Invalid message"},400);
+      const result=await env.DB.prepare("INSERT INTO messages(author_discord_id,author_name,body) VALUES(?,?,?)").bind(author,name,body).run();
+      return json({ok:true,id:result.meta.last_row_id},201);
+    }
+
+
     if(url.pathname==="/auth/login" && request.method==="GET") {
       if(!env.DISCORD_CLIENT_ID || !env.DISCORD_REDIRECT_URI) return json({error:"Discord OAuth is not configured yet."},503);
       const state=b64(crypto.getRandomValues(new Uint8Array(24)));
