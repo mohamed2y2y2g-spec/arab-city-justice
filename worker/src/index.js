@@ -68,13 +68,14 @@ export default {
     if(url.pathname==="/auth/login" && request.method==="GET") {
       if(!env.DISCORD_CLIENT_ID || !env.DISCORD_REDIRECT_URI) return json({error:"Discord OAuth is not configured yet."},503);
       const state=b64(crypto.getRandomValues(new Uint8Array(24)));
+      const loginServer=url.searchParams.get("server")==="test"?"test":"production";
       const authorize=new URL("https://discord.com/oauth2/authorize");
       authorize.searchParams.set("client_id",env.DISCORD_CLIENT_ID);
       authorize.searchParams.set("response_type","code");
       authorize.searchParams.set("redirect_uri",env.DISCORD_REDIRECT_URI);
       authorize.searchParams.set("scope","identify guilds.members.read");
       authorize.searchParams.set("state",state);
-      return redirect(authorize.toString(),{"Set-Cookie":setCookie("acj_oauth_state",state,600)});
+      return redirect(authorize.toString(),{"Set-Cookie":[setCookie("acj_oauth_state",state,600),setCookie("acj_oauth_server",loginServer,600)]});
     }
 
     if(url.pathname==="/auth/callback" && request.method==="GET") {
@@ -82,7 +83,7 @@ export default {
       const clearState=clearCookie("acj_oauth_state");
       try {
         oauthStage="validate-state";
-        const state=url.searchParams.get("state"), saved=cookie(request,"acj_oauth_state"), code=url.searchParams.get("code");
+        const state=url.searchParams.get("state"), saved=cookie(request,"acj_oauth_state"), code=url.searchParams.get("code"), loginServer=cookie(request,"acj_oauth_server")==="test"?"test":"production";
         if(!state || !saved || state!==saved || !code) return redirect("/?login=invalid",{"Set-Cookie":clearState});
         oauthStage="validate-config";
         if(!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET || !env.DISCORD_REDIRECT_URI || !env.DISCORD_GUILD_ID || !env.MINISTRY_ROLE_ID || !env.SESSION_SECRET) {
@@ -113,7 +114,9 @@ export default {
         const user=await userRes.json();
         if(!user?.id || !user?.username) throw new Error("Discord user response is missing required fields");
         oauthStage="fetch-guild-member";
-        const memberRes=await discordFetch("/users/@me/guilds/"+env.DISCORD_GUILD_ID+"/member",token.access_token);
+        const testGuildId="1569044247208923291";
+        const targetGuildId=loginServer==="test"?testGuildId:env.DISCORD_GUILD_ID;
+        const memberRes=await discordFetch("/users/@me/guilds/"+targetGuildId+"/member",token.access_token);
         let roles=[];
         if(memberRes.ok) {
           const member=await memberRes.json();
@@ -128,11 +131,11 @@ export default {
         }
         oauthStage="check-ministry-role";
         oauthStage="sync-member";
-        await env.DB.prepare("INSERT INTO members(discord_id,username,display_name,avatar_hash,source_role_ids,active,updated_at) VALUES(?,?,?,?,?,1,CURRENT_TIMESTAMP) ON CONFLICT(discord_id) DO UPDATE SET username=excluded.username,display_name=excluded.display_name,avatar_hash=excluded.avatar_hash,source_role_ids=excluded.source_role_ids,active=1,updated_at=CURRENT_TIMESTAMP").bind(user.id,user.username,user.global_name||user.username,user.avatar||null,JSON.stringify(roles)).run();
+        await env.DB.prepare("INSERT INTO members(discord_id,username,display_name,avatar_hash,source_role_ids,active,updated_at,guild_id) VALUES(?,?,?,?,?,1,CURRENT_TIMESTAMP,?) ON CONFLICT(discord_id) DO UPDATE SET username=excluded.username,display_name=excluded.display_name,avatar_hash=excluded.avatar_hash,source_role_ids=excluded.source_role_ids,active=1,updated_at=CURRENT_TIMESTAMP,guild_id=excluded.guild_id").bind(user.id,user.username,user.global_name||user.username,user.avatar||null,JSON.stringify(roles),targetGuildId).run();
         oauthStage="create-session";
-        const session=await seal({id:user.id,username:user.username,global_name:user.global_name||user.username,avatar:user.avatar||null,roles,exp:Date.now()+6*60*60*1000},env.SESSION_SECRET);
+        const session=await seal({id:user.id,username:user.username,global_name:user.global_name||user.username,avatar:user.avatar||null,roles,server:loginServer,guild_id:targetGuildId,exp:Date.now()+6*60*60*1000},env.SESSION_SECRET);
         oauthStage="finish-login";
-        return redirect("/members.html",{"Set-Cookie":[setCookie("acj_session",session,21600),clearState]});
+        return redirect("/members.html",{"Set-Cookie":[setCookie("acj_session",session,21600),clearState,clearCookie("acj_oauth_server")]});
       } catch (error) {
         const message=String(error?.message||error||"Unknown error").slice(0,500);
         console.error("OAuth callback exception",JSON.stringify({stage:oauthStage,name:error?.name||"Error",message,stack:error?.stack||""}));
@@ -147,7 +150,8 @@ export default {
 
     if(url.pathname==="/api/me" && request.method==="GET") {
       const session=await getSession(request,env);
-      return session?json({authenticated:true,user:{id:session.id,username:session.username,displayName:session.global_name,avatar:session.avatar},roles:session.roles}):json({authenticated:false},401);
+      const test=session?.server==="test",judgeRoles=test?["1569053629401534474","1569053685441499196"]:[env.JUDGE_ROLE_ID,env.DEPUTY_JUDGE_ROLE_ID],ministryRole=test?"1569053569544618024":env.MINISTRY_ROLE_ID;
+      return session?json({authenticated:true,user:{id:session.id,username:session.username,displayName:session.global_name,avatar:session.avatar},roles:session.roles,server:test?"test":"production",isMinistry:session.roles.includes(ministryRole)||session.roles.some(r=>judgeRoles.includes(r)),isJudge:session.roles.some(r=>judgeRoles.includes(r))}):json({authenticated:false},401);
     }
 
     if(url.pathname==="/api/circulars" && request.method==="GET") {
@@ -161,7 +165,8 @@ export default {
       if(!sameOrigin(request)) return json({error:"Origin rejected"},403);
       const session=await getSession(request,env);
       if(!session) return json({error:"Sign in required"},401);
-      if(!session.roles.includes(env.JUDGE_ROLE_ID) && !session.roles.includes(env.DEPUTY_JUDGE_ROLE_ID)) return json({error:"Insufficient permissions"},403);
+      const judgeRoles=session.server==="test"?["1569053629401534474","1569053685441499196"]:[env.JUDGE_ROLE_ID,env.DEPUTY_JUDGE_ROLE_ID];
+      if(!session.roles.some(role=>judgeRoles.includes(role))) return json({error:"Insufficient permissions"},403);
       let body; try { body=await request.json(); } catch { return json({error:"Invalid JSON"},400); }
       const title=String(body.title||"").trim(), text=String(body.body||"").trim();
       if(!title || !text || title.length>160 || text.length>10000) return json({error:"Title/body is missing or too long"},400);
@@ -172,12 +177,15 @@ export default {
 
 
     const privateSession = await getSession(request,env);
-    const isMinistry = privateSession && privateSession.roles.includes(env.MINISTRY_ROLE_ID);
-    const isJudge = privateSession && (privateSession.roles.includes(env.JUDGE_ROLE_ID) || privateSession.roles.includes(env.DEPUTY_JUDGE_ROLE_ID));
+    const testServer=privateSession?.server==="test";
+    const ministryRole=testServer?"1569053569544618024":env.MINISTRY_ROLE_ID;
+    const judgeRoles=testServer?["1569053629401534474","1569053685441499196"]:[env.JUDGE_ROLE_ID,env.DEPUTY_JUDGE_ROLE_ID];
+    const isMinistry = privateSession && (privateSession.roles.includes(ministryRole)||privateSession.roles.some(role=>judgeRoles.includes(role)));
+    const isJudge = privateSession && privateSession.roles.some(role=>judgeRoles.includes(role));
     if (url.pathname.startsWith("/api/") && !["/api/health","/api/me","/api/circulars","/api/requests"].includes(url.pathname) && !isMinistry) return json({error:"Ministry access required"},privateSession?403:401);
 
     if(url.pathname==="/api/members" && request.method==="GET"){
-      const {results}=await env.DB.prepare("SELECT discord_id,username,display_name,avatar_hash,source_role_ids,active,updated_at FROM members ORDER BY display_name COLLATE NOCASE LIMIT 200").all();
+      const {results}=await env.DB.prepare("SELECT discord_id,username,display_name,avatar_hash,source_role_ids,active,updated_at FROM members WHERE guild_id=? ORDER BY display_name COLLATE NOCASE LIMIT 200").bind(privateSession?.guild_id||env.DISCORD_GUILD_ID).all();
       return json({items:(results||[]).map(m=>({...m,roles:JSON.parse(m.source_role_ids||"[]")}))});
     }
     if(url.pathname==="/api/cases" && request.method==="GET"){
