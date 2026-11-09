@@ -68,6 +68,18 @@ export default {
     }
 
 
+    if(url.pathname==="/debug/oauth-config" && request.method==="GET") {
+      return json({
+        diagnostic:"arab-city-justice-oauth-check",
+        clientIdPresent:!!env.DISCORD_CLIENT_ID,
+        redirectUriPresent:!!env.DISCORD_REDIRECT_URI,
+        clientSecretPresent:!!env.DISCORD_CLIENT_SECRET,
+        guildIdPresent:!!env.DISCORD_GUILD_ID,
+        ministryRolePresent:!!env.MINISTRY_ROLE_ID,
+        sessionSecretPresent:!!env.SESSION_SECRET
+      },200,{"Cache-Control":"no-store"});
+    }
+
     if(url.pathname==="/auth/login" && request.method==="GET") {
       if(!env.DISCORD_CLIENT_ID || !env.DISCORD_REDIRECT_URI) return json({error:"Discord OAuth is not configured yet."},503);
       const state=b64(crypto.getRandomValues(new Uint8Array(24)));
