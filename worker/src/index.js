@@ -137,17 +137,21 @@ export default {
           const member=await memberRes.json();
           roles=Array.isArray(member.roles)?member.roles:[];
         } else if(memberRes.status===404) {
-          return json({error:"هذا الحساب ليس عضواً في سيرفر الوزارة التجريبي."},403,{"Set-Cookie":clearState});
+          // Public portal access: non-members may sign in, but receive no ministry roles.
+          roles=[];
         } else {
           console.error("Discord guild member lookup rejected",memberRes.status,(await memberRes.text()).slice(0,300));
           return json({error:"Discord guild membership lookup failed.",stage:oauthStage,status:memberRes.status},502,{"Set-Cookie":clearState});
         }
         oauthStage="check-ministry-role";
-        if(loginServer==="test" && !roles.some(role=>["1569053569544618024","1569053629401534474","1569053685441499196"].includes(role))) {
-          return json({error:"حسابك لا يحمل رتبة تتيح دخول بوابة الوزارة."},403,{"Set-Cookie":clearState});
+        // Login is public. Ministry access is enforced separately by role checks on private APIs.
+        const ministryRoleIds=loginServer==="test"
+          ? ["1569053569544618024","1569053629401534474","1569053685441499196"]
+          : [env.MINISTRY_ROLE_ID,env.JUDGE_ROLE_ID,env.DEPUTY_JUDGE_ROLE_ID].filter(Boolean);
+        if(roles.some(role=>ministryRoleIds.includes(role))) {
+          oauthStage="sync-member";
+          await (loginServer==="test"?env.TEST_DB:env.DB).prepare("INSERT INTO members(discord_id,username,display_name,avatar_hash,source_role_ids,active,updated_at,guild_id) VALUES(?,?,?,?,?,1,CURRENT_TIMESTAMP,?) ON CONFLICT(discord_id) DO UPDATE SET username=excluded.username,display_name=excluded.display_name,avatar_hash=excluded.avatar_hash,source_role_ids=excluded.source_role_ids,active=1,updated_at=CURRENT_TIMESTAMP,guild_id=excluded.guild_id").bind(user.id,user.username,user.global_name||user.username,user.avatar||null,JSON.stringify(roles),targetGuildId).run();
         }
-        oauthStage="sync-member";
-        await (loginServer==="test"?env.TEST_DB:env.DB).prepare("INSERT INTO members(discord_id,username,display_name,avatar_hash,source_role_ids,active,updated_at,guild_id) VALUES(?,?,?,?,?,1,CURRENT_TIMESTAMP,?) ON CONFLICT(discord_id) DO UPDATE SET username=excluded.username,display_name=excluded.display_name,avatar_hash=excluded.avatar_hash,source_role_ids=excluded.source_role_ids,active=1,updated_at=CURRENT_TIMESTAMP,guild_id=excluded.guild_id").bind(user.id,user.username,user.global_name||user.username,user.avatar||null,JSON.stringify(roles),targetGuildId).run();
         oauthStage="create-session";
         const session=await seal({id:user.id,username:user.username,global_name:user.global_name||user.username,avatar:user.avatar||null,roles,server:loginServer,guild_id:targetGuildId,exp:Date.now()+6*60*60*1000},env.SESSION_SECRET);
         oauthStage="finish-login";
